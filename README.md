@@ -24,7 +24,7 @@ Transform your reMarkable tablet into a virtual mouse for your Linux desktop! Th
 - **Root privileges** or proper udev rules for input device creation
 
 ### Dependencies
-Install the required system package:
+Install the required system package (pip version might not work):
 ```bash
 sudo apt install python3-evdev
 ```
@@ -34,7 +34,7 @@ sudo apt install python3-evdev
 ### Option 1: Direct Download
 ```bash
 # Download the script
-wget https://raw.githubusercontent.com/yourusername/remarkable-mouse/main/remarkable_mouse.py
+wget https://raw.githubusercontent.com/valechelaru/remarkable-mouse/refs/heads/main/remarkable_mouse.py
 chmod +x remarkable_mouse.py
 
 # Run
@@ -43,7 +43,7 @@ python3 remarkable_mouse.py
 
 ### Option 2: Clone Repository
 ```bash
-git clone https://github.com/yourusername/remarkable-mouse.git
+git clone https://github.com/valechelaru/remarkable-mouse.git
 cd remarkable-mouse
 python3 remarkable_mouse.py
 ```
