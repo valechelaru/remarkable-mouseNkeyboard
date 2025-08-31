@@ -1,19 +1,27 @@
-# reMarkable Mouse
+# reMarkable Mouse & Keyboard
 
-
-Transform your reMarkable tablet into a virtual mouse for your Linux desktop! This tool creates a virtual input device that translates pen movements and touches from your reMarkable tablet into mouse events on your computer.
+Transform your reMarkable tablet into a virtual mouse and keyboard for your Linux desktop! This toolkit includes two tools:
+- **reMarkable Mouse**: Creates a virtual mouse device that translates pen movements and touches into mouse events
+- **reMarkable Keyboard**: Creates a virtual keyboard device for the reMarkable Type Folio keyboard
 
 <img src="images/remarkable.png" alt="reMarkable Mouse" width="400"/>
 
 ## Features
 
+### Mouse Features
 - ✨ **Hover Detection**: Move the mouse cursor by hovering the pen above the tablet surface
 - 🖱️ **Click Detection**: Click by touching the pen to the tablet surface  
 - 🎯 **Pressure Sensitivity**: Responsive to pen pressure levels
 - 📐 **Aspect Ratio Preservation**: Maintains proper scaling between tablet and screen
 - 🎛️ **Configurable Sensitivity**: Adjustable mouse movement sensitivity
-- 🔧 **Multiple reMarkable Models**: Supports reMarkable 2 (and probably 1)
+- � **Orientation Control**: Default flipped orientation for Type Folio compatibility, with CLI option to restore original
+- �🔧 **Multiple reMarkable Models**: Supports reMarkable 2 (and probably 1)
 - ⚡ **Low Latency**: Real-time pen tracking via SSH connection
+
+### Keyboard Features
+- ⌨️ **Full Keyboard Support**: Complete Type Folio keyboard functionality
+- 🔧 **reMarkable 2 Only**: Requires Type Folio (reMarkable 2.0 only)
+- ⚡ **Direct Key Mapping**: All keys mapped directly to Linux input events
 
 ## Requirements
 
@@ -33,19 +41,28 @@ sudo apt install python3-evdev
 
 ### Option 1: Direct Download
 ```bash
-# Download the script
-wget https://raw.githubusercontent.com/valechelaru/remarkable-mouse/refs/heads/main/remarkable_mouse.py
-chmod +x remarkable_mouse.py
+# Download the scripts
+wget https://raw.githubusercontent.com/valechelaru/remarkable-mouseNkeyboard/refs/heads/main/remarkable_mouse.py
+wget https://raw.githubusercontent.com/valechelaru/remarkable-mouseNkeyboard/refs/heads/main/remarkable_keyboard.py
+chmod +x remarkable_mouse.py remarkable_keyboard.py
 
-# Run
+# Run mouse
 python3 remarkable_mouse.py
+
+# Run keyboard (in separate terminal)
+python3 remarkable_keyboard.py
 ```
 
 ### Option 2: Clone Repository
 ```bash
-git clone https://github.com/valechelaru/remarkable-mouse.git
-cd remarkable-mouse
+git clone https://github.com/valechelaru/remarkable-mouseNkeyboard.git
+cd remarkable-mouseNkeyboard
+
+# Run mouse
 python3 remarkable_mouse.py
+
+# Run keyboard (in separate terminal)
+python3 remarkable_keyboard.py
 ```
 
 ## Setup
@@ -60,46 +77,59 @@ On your reMarkable tablet (connect via USB or Wi-Fi):
 
 ## Usage
 
-### Basic Usage
+### Mouse Usage
 ```bash
+# Basic usage
 python3 remarkable_mouse.py
+
+# With custom options
+python3 remarkable_mouse.py --host root@192.168.1.100 --sensitivity 2.0 --verbose
+
+# Restore original orientation (default is flipped for Type Folio)
+python3 remarkable_mouse.py --flip
 ```
 
-### With Custom Options
+### Keyboard Usage
 ```bash
-# Specify reMarkable IP address
-python3 remarkable_mouse.py --host root@192.168.1.100
+# Basic usage
+python3 remarkable_keyboard.py
 
-# Set reMarkable version (1 or 2)
-python3 remarkable_mouse.py --remarkable-version 1
-
-# Adjust mouse sensitivity
-python3 remarkable_mouse.py --sensitivity 2.0
-
-# Enable verbose output for debugging
-python3 remarkable_mouse.py --verbose
-
-# Disable uniform scaling (may cause distortion)
-python3 remarkable_mouse.py --no-uniform-scaling
+# With verbose output
+python3 remarkable_keyboard.py --verbose --host root@192.168.1.100
 ```
 
 ### Command Line Options
 
+#### Mouse Options
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--host` | reMarkable SSH host | `root@10.11.99.1` |
 | `--remarkable-version` | reMarkable version (1 or 2) | `2` |
 | `--sensitivity` | Mouse sensitivity multiplier | `1.0` |
+| `--flip` | Restore original orientation | `False` (flipped by default) |
 | `--no-uniform-scaling` | Disable uniform scaling | `False` |
+| `--verbose` | Enable verbose output | `False` |
+
+#### Keyboard Options
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--host` | reMarkable SSH host | `root@10.11.99.1` |
 | `--verbose` | Enable verbose output | `False` |
 
 ## How It Works
 
+### Mouse
 1. **SSH Connection**: Connects to your reMarkable tablet via SSH
 2. **Input Reading**: Reads pen input events from `/dev/input/event1` (rM2) or `/dev/input/event0` (rM1)
 3. **Virtual Device**: Creates a virtual mouse/pen input device on your Linux system
-4. **Event Translation**: Translates reMarkable coordinates to screen coordinates
+4. **Event Translation**: Translates reMarkable coordinates to screen coordinates with flipped orientation for Type Folio compatibility
 5. **Input Simulation**: Sends mouse movements, clicks, and hover events to your system
+
+### Keyboard
+1. **SSH Connection**: Connects to your reMarkable tablet via SSH
+2. **Input Reading**: Reads keyboard events from `/dev/input/event3` (Type Folio)
+3. **Virtual Device**: Creates a virtual keyboard input device on your Linux system
+4. **Event Pass-through**: Directly forwards all keyboard events to your system
 
 ## Pen Behavior
 
@@ -130,11 +160,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Has not been tested on multiple monitors
 - Has not been tested with a remarkable 1
 - Has not been tested with reMarkable paper pro
+- Some keys on the german type folio do not map correctly (ü, ß)
 
 ## Roadmap
 
 - [x] X11 support (tested and working)
 - [x] Wayland support (tested and working)
+- [x] Keyboard support for Type Folio
+- [ ] Fix key mapping issues (ü, ß)
 - [ ] Smoothing of cursor movement (zig zagging)
 - [ ] Gnome appindicator support
 - [ ] GUI configuration tool

@@ -14,6 +14,7 @@ Features:
 - Support for reMarkable 1.0 and 2.0
 - Proper aspect ratio scaling
 - Works with Wayland and X11 desktop environments
+- Default flipped orientation (180 degrees) with option to restore original
 
 Requirements:
 - Linux with Wayland or X11 display server (tested under Ubuntu)
@@ -22,7 +23,9 @@ Requirements:
 - Root privileges to create input devices (or proper udev rules)
 
 Usage:
-    python3 remarkable_mouse_wayland.py [--host REMARKABLE_IP] [--remarkable-version VERSION]
+    python3 remarkable_mouse.py [--host REMARKABLE_IP] [--remarkable-version VERSION] [--flip]
+    
+Note: Default orientation is now flipped 180 degrees. Use --flip/-f to restore original orientation.
 """
 
 import asyncio
@@ -47,7 +50,7 @@ except ImportError:
 
 
 class RemarkableMouse:
-    def __init__(self, rm_host: str = "root@10.11.99.1", remarkable_version: int = 2, verbose: bool = False):
+    def __init__(self, rm_host: str = "root@10.11.99.1", remarkable_version: int = 2, verbose: bool = False, flip_orientation: bool = False):
         self.rm_host = rm_host
         # reMarkable version: 1 for reMarkable 1.0, 2 for reMarkable 2.0, 3+ for future versions
         if remarkable_version not in [1, 2]:
@@ -56,6 +59,7 @@ class RemarkableMouse:
         self.device_path: Optional[str] = None
         self.uinput: Optional[UInput] = None
         self.verbose = verbose
+        self.flip_orientation = flip_orientation
         
         # Stylus state
         self.x = 0
@@ -192,6 +196,16 @@ class RemarkableMouse:
 
     def map_coordinates(self, rm_x: int, rm_y: int) -> Tuple[int, int]:
         """Map reMarkable coordinates to screen coordinates with proper aspect ratio."""
+        # Apply orientation flipping - by default we flip (180 degree rotation)
+        # When --flip is used, we restore the original orientation
+        if not self.flip_orientation:  # Default behavior: flipped orientation
+            # Flip coordinates (180 degree rotation around center)
+            flipped_x = self.rm_width - rm_x
+            flipped_y = self.rm_height - rm_y
+        else:  # When --flip flag is used: original orientation
+            flipped_x = rm_x
+            flipped_y = rm_y
+        
         # Calculate aspect ratios
         rm_aspect = self.rm_width / self.rm_height  # reMarkable aspect ratio
         screen_aspect = self.screen_width / self.screen_height  # Screen aspect ratio
@@ -201,13 +215,13 @@ class RemarkableMouse:
         if rm_aspect > screen_aspect:
             # reMarkable is wider relative to height, scale by width
             scale = self.screen_width / self.rm_width
-            screen_x = int(rm_x * scale)
-            screen_y = int(rm_y * scale)
+            screen_x = int(flipped_x * scale)
+            screen_y = int(flipped_y * scale)
         else:
             # reMarkable is taller relative to width, scale by height  
             scale = self.screen_height / self.rm_height
-            screen_x = int(rm_x * scale)
-            screen_y = int(rm_y * scale)
+            screen_x = int(flipped_x * scale)
+            screen_y = int(flipped_y * scale)
         
         # Ensure coordinates are within bounds
         screen_x = max(0, min(screen_x, self.screen_width - 1))
@@ -217,16 +231,24 @@ class RemarkableMouse:
 
     def calculate_relative_movement(self, current_x: int, current_y: int) -> Tuple[int, int]:
         """Calculate relative movement with floating-point accumulation for smooth fine motion."""
+        # Apply coordinate flipping before calculating relative movement
+        if not self.flip_orientation:  # Default behavior: flipped orientation
+            flipped_current_x = self.rm_width - current_x
+            flipped_current_y = self.rm_height - current_y
+        else:  # When --flip flag is used: original orientation
+            flipped_current_x = current_x
+            flipped_current_y = current_y
+        
         if not hasattr(self, 'last_x') or self.last_x == 0:
-            self.last_x = current_x
-            self.last_y = current_y
+            self.last_x = flipped_current_x
+            self.last_y = flipped_current_y
             self._rel_x_accum = 0.0
             self._rel_y_accum = 0.0
             return 0, 0
 
-        # Calculate raw movement in reMarkable coordinates
-        raw_rel_x = current_x - self.last_x
-        raw_rel_y = current_y - self.last_y
+        # Calculate raw movement in reMarkable coordinates (after flipping)
+        raw_rel_x = flipped_current_x - self.last_x
+        raw_rel_y = flipped_current_y - self.last_y
 
         if self.uniform_scaling:
             scale_x = self.screen_width / self.rm_width
@@ -255,9 +277,9 @@ class RemarkableMouse:
         self._rel_x_accum -= rel_x
         self._rel_y_accum -= rel_y
 
-        # Update last position
-        self.last_x = current_x
-        self.last_y = current_y
+        # Update last position (using flipped coordinates)
+        self.last_x = flipped_current_x
+        self.last_y = flipped_current_y
 
         return rel_x, rel_y
 
@@ -528,6 +550,11 @@ async def main():
         help='reMarkable version: 1 for reMarkable 1.0, 2 for reMarkable 2.0 (default: 2)'
     )
     parser.add_argument(
+        '--flip', '-f',
+        action='store_true',
+        help='Flip orientation to original (default is now flipped 180 degrees)'
+    )
+    parser.add_argument(
         '--verbose', '-v',
         action='store_true',
         help='Enable verbose output'
@@ -540,13 +567,15 @@ async def main():
         print("WARNING: Not running as root. You may need sudo for virtual device creation.")
     
     # Create and run the virtual mouse/stylus
-    mouse = RemarkableMouse(args.host, getattr(args, 'remarkable_version'), verbose=args.verbose)
+    mouse = RemarkableMouse(args.host, getattr(args, 'remarkable_version'), verbose=args.verbose, flip_orientation=args.flip)
     mouse.mouse_sensitivity = args.sensitivity
     mouse.uniform_scaling = not args.no_uniform_scaling
     
     if args.verbose:
         print(f"Mouse sensitivity: {mouse.mouse_sensitivity}")
         print(f"Uniform scaling: {mouse.uniform_scaling}")
+        orientation = "original" if args.flip else "flipped (default)"
+        print(f"Orientation: {orientation}")
     
     # Setup signal handler for graceful shutdown
     signal.signal(signal.SIGINT, lambda s, f: signal_handler(s, f, mouse))
