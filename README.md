@@ -14,8 +14,8 @@ Transform your reMarkable tablet into a virtual mouse and keyboard for your Linu
 - 🎯 **Pressure Sensitivity**: Responsive to pen pressure levels
 - 📐 **Aspect Ratio Preservation**: Maintains proper scaling between tablet and screen
 - 🎛️ **Configurable Sensitivity**: Adjustable mouse movement sensitivity
-- � **Orientation Control**: Default flipped orientation for Type Folio compatibility, with CLI option to restore original
-- �🔧 **Multiple reMarkable Models**: Supports reMarkable 2 (and probably 1)
+- ♻ **Orientation Control**: Default flipped orientation for Type Folio compatibility, with CLI option to restore original
+- 🔧 **Multiple reMarkable Models**: Supports reMarkable 2 (and probably 1)
 - ⚡ **Low Latency**: Real-time pen tracking via SSH connection
 
 ### Keyboard Features
